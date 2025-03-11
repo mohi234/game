@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #282c34;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 5px solid white;
+            background: grey;
+        }
+        #score {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            width: 60px;
+            height: 60px;
+            font-size: 20px;
+            background: gray;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+        .btn:active {
+            background: darkgray;
+        }
+    </style>
+</head>
+<body>
+    <h1>Snake Game</h1>
+    <p id="score">Score: 0</p>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <!-- Mobile Controls -->
+    <div class="controls">
+        <button class="btn" id="up">▲</button>
+        <div class="row">
+            <button class="btn" id="left">◄</button>
+            <button class="btn" id="down">▼</button>
+            <button class="btn" id="right">►</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisplay = document.getElementById("score");
+
+        const box = 20;
+        let snake = [{ x: 200, y: 200 }];
+        let food = generateFood();
+        let dx = box, dy = 0;
+        let score = 0;
+        let gameRunning = true;
+        let nextMove = { x: dx, y: dy };
+
+        function draw() {
+            ctx.fillStyle = "grey";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "red";
+            ctx.fillRect(food.x, food.y, box, box);
+
+            ctx.fillStyle = "lime";
+            snake.forEach(segment => {
+                ctx.fillRect(segment.x, segment.y, box, box);
+            });
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            // Apply movement only if it's a valid next move
+            dx = nextMove.x;
+            dy = nextMove.y;
+
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                scoreDisplay.textContent = "Score: " + score;
+                food = generateFood();
+            } else {
+                snake.pop();
+            }
+
+            if (checkCollision()) {
+                gameOver();
+            }
+        }
+
+        function checkCollision() {
+            // Wall collision
+            if (snake[0].x < 0 || snake[0].y < 0 || snake[0].x >= canvas.width || snake[0].y >= canvas.height) {
+                return true;
+            }
+
+            // Self collision
+            return snake.slice(1).some(segment => segment.x === snake[0].x && segment.y === snake[0].y);
+        }
+
+        function generateFood() {
+            let newFood;
+            do {
+                newFood = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+            } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y)); 
+            return newFood;
+        }
+
+        function gameOver() {
+            alert("Game Over! Your Score: " + score);
+            snake = [{ x: 200, y: 200 }];
+            dx = box;
+            dy = 0;
+            nextMove = { x: dx, y: dy };
+            score = 0;
+            scoreDisplay.textContent = "Score: 0";
+            food = generateFood();
+        }
+
+        function changeDirection(newDx, newDy) {
+            // Prevent reversing direction
+            if (newDx !== -dx && newDy !== -dy) {
+                nextMove = { x: newDx, y: newDy };
+            }
+        }
+
+        // Keyboard Controls
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowUp") changeDirection(0, -box);
+            else if (event.key === "ArrowDown") changeDirection(0, box);
+            else if (event.key === "ArrowLeft") changeDirection(-box, 0);
+            else if (event.key === "ArrowRight") changeDirection(box, 0);
+        });
+
+        // Mobile Touch Controls
+        document.getElementById("up").addEventListener("click", () => changeDirection(0, -box));
+        document.getElementById("down").addEventListener("click", () => changeDirection(0, box));
+        document.getElementById("left").addEventListener("click", () => changeDirection(-box, 0));
+        document.getElementById("right").addEventListener("click", () => changeDirection(box, 0));
+
+        setInterval(() => {
+            update();
+            draw();
+        }, 100);
+    </script>
+</body>
+</html>
